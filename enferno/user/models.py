@@ -1,4 +1,3 @@
-import dataclasses
 import secrets
 import string
 from datetime import datetime
@@ -27,7 +26,6 @@ roles_users: Table = db.Table(
 )
 
 
-@dataclasses.dataclass
 class Role(db.Model, RoleMixin, BaseMixin):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(80), unique=True, nullable=True)
@@ -42,7 +40,6 @@ class Role(db.Model, RoleMixin, BaseMixin):
         return self
 
 
-@dataclasses.dataclass
 class User(UserMixin, db.Model, BaseMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(255), unique=True, nullable=True)
@@ -220,13 +217,10 @@ class Activity(db.Model, BaseMixin):
 
     @classmethod
     def register(cls, user_id, action, data=None):
-        """Register an activity for audit purposes.
-
-        Note: Does not commit - caller is responsible for transaction management.
-        This prevents activity logging from rolling back other pending changes.
-        """
+        """Register an activity for audit purposes."""
         activity = cls(user_id=user_id, action=action, data=data)
         db.session.add(activity)
+        db.session.commit()
         return activity
 
 

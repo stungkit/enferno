@@ -68,9 +68,9 @@ def api_user_create():
         # Register activity
         Activity.register(current_user.id, "User Create", user.to_dict())
         return {"message": "User successfully created!"}
-    except Exception as e:
+    except Exception:
         db.session.rollback()
-        return {"message": "Error creating user", "error": str(e)}, 412
+        return {"message": "Error creating user"}, 400
 
 
 @bp_user.post("/api/user/<int:id>")
@@ -140,9 +140,9 @@ def api_role_create():
         # Register activity
         Activity.register(current_user.id, "Role Create", role.to_dict())
         return {"message": "Role successfully created!"}
-    except Exception as e:
+    except Exception:
         db.session.rollback()
-        return {"message": "Error creating role", "error": str(e)}, 412
+        return {"message": "Error creating role"}, 400
 
 
 @bp_user.post("/api/role/<int:id>")
@@ -182,18 +182,19 @@ def api_activities():
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", PER_PAGE, type=int)
 
-    # Start with base query - newest activities first
-    query = db.select(Activity).order_by(Activity.created_at.desc())
+    # Join with User to avoid N+1 queries
+    query = (
+        db.select(Activity, User)
+        .outerjoin(User, Activity.user_id == User.id)
+        .order_by(Activity.created_at.desc())
+    )
 
     # Paginate results
     pagination = db.paginate(query, page=page, per_page=per_page)
 
     # Convert activities to dictionaries
     items = []
-    for activity in pagination.items:
-        # Get user info if available
-        user = db.session.get(User, activity.user_id)
-
+    for activity, user in pagination.items:
         items.append(
             {
                 "id": activity.id,
