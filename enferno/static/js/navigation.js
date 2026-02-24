@@ -31,7 +31,8 @@ const enfernoNavigation = [
     to: '/mf-recovery-codes'
   },
   {
-    heading: 'Administration'
+    heading: 'Administration',
+    role: 'admin'
   },
   {
     title: 'User Management',
